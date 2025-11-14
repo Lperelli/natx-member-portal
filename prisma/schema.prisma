@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  passwordHash       String
+  firstName          String
+  lastName           String
+  role               String              @default("MEMBER")
+  status             String              @default("ACTIVE")
+  title              String?
+  company            String?
+  bio                String?
+  preferences        String?
+  memberSince        DateTime            @default(now())
+  lastLogin          DateTime?
+  avatarUrl          String?
+  region             String?
+  industry           String?
+  linkedinUrl        String?
+  phone              String?
+  address            String?
+  eventRegistrations EventRegistration[]
+  sessions           Session[]
+  resetTokens        PasswordResetToken[]
+  auditLogs          AdminAuditLog[]     @relation("AdminActor")
+  announcementsSent  Announcement[]      @relation("AnnouncementSender")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt    DateTime
+  token        String   @unique
+  rememberMe   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Event {
+  id            String              @id @default(cuid())
+  title         String
+  slug          String              @unique
+  description   String
+  featuredImage String?
+  eventType     String
+  location      String
+  startAt       DateTime
+  endAt         DateTime?
+  status        String              @default("UPCOMING")
+  capacity      Int?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  registrations EventRegistration[]
+}
+
+model EventRegistration {
+  id           String   @id @default(cuid())
+  userId       String
+  eventId      String
+  status       String   @default("REGISTERED")
+  registeredAt DateTime @default(now())
+  attendedAt   DateTime?
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+}
+
+model Resource {
+  id           String   @id @default(cuid())
+  title        String
+  slug         String   @unique
+  category     String
+  resourceType String
+  description  String
+  fileUrl      String?
+  externalUrl  String?
+  thumbnailUrl String?
+  tags         String?
+  publishedAt  DateTime @default(now())
+  status       String   @default("PUBLISHED")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model MemberProfile {
+  id          String    @id @default(cuid())
+  fullName    String
+  title       String?
+  company     String?
+  bio         String?
+  profilePhoto String?
+  email       String
+  linkedinUrl String?
+  region      String
+  industry    String
+  memberSince DateTime
+  online      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  actorId     String
+  actor       User     @relation("AdminActor", fields: [actorId], references: [id], onDelete: Cascade)
+  action      String
+  metadata    String?
+  createdAt   DateTime @default(now())
+}
+
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  message     String
+  sentById    String
+  sentBy      User     @relation("AnnouncementSender", fields: [sentById], references: [id], onDelete: Cascade)
+  audience    String   @default("ALL")
+  createdAt   DateTime @default(now())
+}
+
