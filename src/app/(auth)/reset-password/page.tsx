@@ -4,11 +4,13 @@ import { AuthCard } from '@/components/auth/auth-card';
 import { ResetPasswordForm } from '@/components/auth/reset-password-form';
 
 type ResetPasswordPageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default function ResetPasswordPage({ searchParams }: ResetPasswordPageProps) {
-  const token = typeof searchParams?.token === 'string' ? searchParams.token : '';
+export default async function ResetPasswordPage({ searchParams }: ResetPasswordPageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const token =
+    typeof resolvedSearchParams?.token === 'string' ? resolvedSearchParams.token : '';
 
   if (!token) {
     notFound();

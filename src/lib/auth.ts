@@ -38,7 +38,7 @@ export async function createSession(userId: string, rememberMe: boolean) {
     }
   });
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',
@@ -48,7 +48,7 @@ export async function createSession(userId: string, rememberMe: boolean) {
 }
 
 export async function destroySession(token?: string | null) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const sessionToken = token ?? cookieStore.get(SESSION_COOKIE)?.value;
   if (!sessionToken) return;
 
@@ -57,7 +57,7 @@ export async function destroySession(token?: string | null) {
 }
 
 export async function getSession(): Promise<SessionWithUser | null> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const sessionToken = cookieStore.get(SESSION_COOKIE)?.value;
   if (!sessionToken) return null;
 
@@ -83,7 +83,8 @@ export async function requireAuth(options?: { role?: UserRole; redirectTo?: stri
   const session = await getSession();
   const redirectTo = options?.redirectTo ?? '/login';
   if (!session) {
-    const currentUrl = headers().get('x-pathname') ?? '';
+    const headerStore = await headers();
+    const currentUrl = headerStore.get('x-pathname') ?? '';
     const target = currentUrl ? `${redirectTo}?next=${encodeURIComponent(currentUrl)}` : redirectTo;
     redirect(target);
   }

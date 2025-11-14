@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { EventCard } from '@/components/events/event-card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import { Suspense } from 'react';
 import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 
@@ -9,11 +10,11 @@ async function EventsList({ query }: { query?: string }) {
   const events = await prisma.event.findMany({
     where: query
       ? {
-          OR: [
-            { title: { contains: query, mode: 'insensitive' } },
-            { description: { contains: query, mode: 'insensitive' } },
-            { location: { contains: query, mode: 'insensitive' } }
-          ]
+            OR: [
+              { title: { contains: query } },
+              { description: { contains: query } },
+              { location: { contains: query } }
+            ]
         }
       : undefined,
     orderBy: { startAt: 'asc' }
@@ -27,9 +28,9 @@ async function EventsList({ query }: { query?: string }) {
         <p className="text-sm text-neutral-soft">
           Adjust your search filters or check back soon—new programming is added regularly.
         </p>
-        <Button variant="outline" asChild>
-          <a href="/dashboard/events">Reset filters</a>
-        </Button>
+          <Button variant="outline" asChild>
+            <Link href="/dashboard/events">Reset filters</Link>
+          </Button>
       </div>
     );
   }
@@ -44,11 +45,12 @@ async function EventsList({ query }: { query?: string }) {
 }
 
 type EventsPageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default function EventsPage({ searchParams }: EventsPageProps) {
-  const query = typeof searchParams?.q === 'string' ? searchParams.q : undefined;
+export default async function EventsPage({ searchParams }: EventsPageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const query = typeof resolvedSearchParams?.q === 'string' ? resolvedSearchParams.q : undefined;
 
   return (
     <div className="space-y-10 animate-fade-in-up">
@@ -70,10 +72,9 @@ export default function EventsPage({ searchParams }: EventsPageProps) {
         </form>
       </header>
 
-      <Suspense key={query} fallback={<p className="text-neutral-soft">Loading events…</p>}>
-        {/* @ts-expect-error Async Server Component */}
-        <EventsList query={query} />
-      </Suspense>
+        <Suspense key={query} fallback={<p className="text-neutral-soft">Loading events…</p>}>
+          <EventsList query={query} />
+        </Suspense>
     </div>
   );
 }

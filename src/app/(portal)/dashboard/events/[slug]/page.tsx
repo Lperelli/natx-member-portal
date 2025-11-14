@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { format } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/current-user';
@@ -9,17 +10,18 @@ import { MapPinIcon, ClockIcon, UserGroupIcon } from '@heroicons/react/24/outlin
 import { RegisterEventButton } from '@/components/events/register-event-button';
 
 type EventDetailPageProps = {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 };
 
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
+  const resolvedParams = await params;
   const user = await getCurrentUser();
   if (!user) {
     return null;
   }
 
   const event = await prisma.event.findUnique({
-    where: { slug: params.slug },
+    where: { slug: resolvedParams.slug },
     include: {
       registrations: {
         where: { userId: user.id }
@@ -93,9 +95,9 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           the program.
         </p>
         <div className="mt-6">
-          <Button variant="outline" asChild>
-            <a href="/dashboard/events">Back to events</a>
-          </Button>
+            <Button variant="outline" asChild>
+              <Link href="/dashboard/events">Back to events</Link>
+            </Button>
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { CommunityCard } from '@/components/community/community-card';
 import { Input } from '@/components/ui/input';
@@ -24,48 +25,60 @@ async function Filters({
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-      <div className="flex flex-wrap gap-3">
-        <span className="text-xs font-semibold uppercase text-neutral-soft">Region</span>
-        <a href="/dashboard/community">
-          <Badge variant={activeRegion ? 'outline' : 'primary'} className="cursor-pointer">
-            All
-          </Badge>
-        </a>
-        {regions.map(({ region }) => (
-          <a
-            key={region}
-            href={`/dashboard/community?region=${region}${activeIndustry ? `&industry=${activeIndustry}` : ''}`}
-          >
-            <Badge
-              variant={activeRegion === region ? 'primary' : 'outline'}
-              className="cursor-pointer"
-            >
-              {region}
+        <div className="flex flex-wrap gap-3">
+          <span className="text-xs font-semibold uppercase text-neutral-soft">Region</span>
+          <Link href="/dashboard/community">
+            <Badge variant={activeRegion ? 'outline' : 'primary'} className="cursor-pointer">
+              All
             </Badge>
-          </a>
-        ))}
-      </div>
-      <div className="flex flex-wrap gap-3">
-        <span className="text-xs font-semibold uppercase text-neutral-soft">Industry</span>
-        <a href={`/dashboard/community${activeRegion ? `?region=${activeRegion}` : ''}`}>
-          <Badge variant={activeIndustry ? 'outline' : 'primary'} className="cursor-pointer">
-            All
-          </Badge>
-        </a>
-        {industries.map(({ industry }) => (
-          <a
-            key={industry}
-            href={`/dashboard/community?industry=${industry}${activeRegion ? `&region=${activeRegion}` : ''}`}
+          </Link>
+          {regions
+            .map(({ region }) => region)
+            .filter((region): region is string => Boolean(region))
+            .map((region) => (
+              <Link
+                key={region}
+                href={`/dashboard/community?region=${encodeURIComponent(region)}${
+                  activeIndustry ? `&industry=${encodeURIComponent(activeIndustry)}` : ''
+                }`}
+              >
+                <Badge
+                  variant={activeRegion === region ? 'primary' : 'outline'}
+                  className="cursor-pointer"
+                >
+                  {region}
+                </Badge>
+              </Link>
+            ))}
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <span className="text-xs font-semibold uppercase text-neutral-soft">Industry</span>
+          <Link
+            href={`/dashboard/community${activeRegion ? `?region=${encodeURIComponent(activeRegion)}` : ''}`}
           >
-            <Badge
-              variant={activeIndustry === industry ? 'primary' : 'outline'}
-              className="cursor-pointer"
-            >
-              {industry}
+            <Badge variant={activeIndustry ? 'outline' : 'primary'} className="cursor-pointer">
+              All
             </Badge>
-          </a>
-        ))}
-      </div>
+          </Link>
+          {industries
+            .map(({ industry }) => industry)
+            .filter((industry): industry is string => Boolean(industry))
+            .map((industry) => (
+              <Link
+                key={industry}
+                href={`/dashboard/community?industry=${encodeURIComponent(industry)}${
+                  activeRegion ? `&region=${encodeURIComponent(activeRegion)}` : ''
+                }`}
+              >
+                <Badge
+                  variant={activeIndustry === industry ? 'primary' : 'outline'}
+                  className="cursor-pointer"
+                >
+                  {industry}
+                </Badge>
+              </Link>
+            ))}
+        </div>
     </div>
   );
 }
@@ -84,11 +97,11 @@ async function CommunityGrid({
       AND: [
         query
           ? {
-              OR: [
-                { fullName: { contains: query, mode: 'insensitive' } },
-                { company: { contains: query, mode: 'insensitive' } },
-                { title: { contains: query, mode: 'insensitive' } }
-              ]
+                OR: [
+                  { fullName: { contains: query } },
+                  { company: { contains: query } },
+                  { title: { contains: query } }
+                ]
             }
           : {},
         region ? { region } : {},
@@ -119,13 +132,17 @@ async function CommunityGrid({
 }
 
 type CommunityPageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default function CommunityPage({ searchParams }: CommunityPageProps) {
-  const query = typeof searchParams?.q === 'string' ? searchParams.q : undefined;
-  const region = typeof searchParams?.region === 'string' ? searchParams.region : undefined;
-  const industry = typeof searchParams?.industry === 'string' ? searchParams.industry : undefined;
+export default async function CommunityPage({ searchParams }: CommunityPageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const query =
+    typeof resolvedSearchParams?.q === 'string' ? resolvedSearchParams.q : undefined;
+  const region =
+    typeof resolvedSearchParams?.region === 'string' ? resolvedSearchParams.region : undefined;
+  const industry =
+    typeof resolvedSearchParams?.industry === 'string' ? resolvedSearchParams.industry : undefined;
 
   return (
     <div className="space-y-10 animate-fade-in-up">
@@ -146,18 +163,16 @@ export default function CommunityPage({ searchParams }: CommunityPageProps) {
           />
         </form>
         <Suspense fallback={null}>
-          {/* @ts-expect-error Async Server Component */}
           <Filters activeRegion={region} activeIndustry={industry} />
         </Suspense>
       </header>
 
-      <Suspense
-        key={`${query ?? ''}-${region ?? ''}-${industry ?? ''}`}
-        fallback={<p className="text-neutral-soft">Loading members…</p>}
-      >
-        {/* @ts-expect-error Async Server Component */}
-        <CommunityGrid query={query} region={region} industry={industry} />
-      </Suspense>
+        <Suspense
+          key={`${query ?? ''}-${region ?? ''}-${industry ?? ''}`}
+          fallback={<p className="text-neutral-soft">Loading members…</p>}
+        >
+          <CommunityGrid query={query} region={region} industry={industry} />
+        </Suspense>
     </div>
   );
 }

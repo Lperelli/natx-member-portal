@@ -28,6 +28,10 @@ const initialState: FormState = {
   success: false
 };
 
+async function submitProfileAction(_prevState: FormState, formData: FormData) {
+  return updateProfile(formData);
+}
+
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
@@ -43,7 +47,7 @@ function FieldError({ message }: { message?: string[] }) {
 }
 
 export function ProfileForm({ initialData }: ProfileFormProps) {
-  const [state, formAction] = useFormState<FormState, FormData>(updateProfile, initialState);
+  const [state, formAction] = useFormState<FormState, FormData>(submitProfileAction, initialState);
 
   return (
     <form className="space-y-8" action={formAction}>

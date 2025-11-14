@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/current-user';
 import { EventCard } from '@/components/events/event-card';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default async function MyEventsPage() {
   const user = await getCurrentUser();
@@ -29,9 +30,9 @@ export default async function MyEventsPage() {
             Explore the calendar and reserve your seat in high-impact programming curated for NATX
             members.
           </p>
-          <Button asChild>
-            <a href="/dashboard/events">View events</a>
-          </Button>
+            <Button asChild>
+              <Link href="/dashboard/events">View events</Link>
+            </Button>
         </div>
       ) : (
         <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-3">

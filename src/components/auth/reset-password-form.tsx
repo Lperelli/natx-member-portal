@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import { resetPassword } from '@/lib/server-actions/auth-actions';
 import { Input } from '@/components/ui/input';
@@ -33,6 +33,15 @@ function FieldError({ message }: { message?: string[] }) {
 export function ResetPasswordForm({ token }: { token: string }) {
   const [state, formAction] = useFormState<FormState, FormData>(resetPassword, initialState);
   const [done, setDone] = useState(false);
+  useEffect(() => {
+    if (state?.success) {
+      setDone(true);
+      const timeout = window.setTimeout(() => {
+        window.location.href = '/login?status=password-reset';
+      }, 1500);
+      return () => window.clearTimeout(timeout);
+    }
+  }, [state]);
 
   if (done) {
     return (
@@ -58,14 +67,9 @@ export function ResetPasswordForm({ token }: { token: string }) {
     <form
       className="space-y-6"
       action={async (formData) => {
+        setDone(false);
         formData.append('token', token);
-        const result = await formAction(formData);
-        if (result?.success) {
-          setDone(true);
-          setTimeout(() => {
-            window.location.href = '/login?status=password-reset';
-          }, 1500);
-        }
+        await formAction(formData);
       }}
     >
       <div className="space-y-4">

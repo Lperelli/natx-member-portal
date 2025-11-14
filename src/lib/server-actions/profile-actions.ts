@@ -53,31 +53,36 @@ export async function updateProfile(formData: FormData) {
     }
   });
 
-  await prisma.memberProfile.upsert({
-    where: { email: session.user.email },
-    update: {
-      fullName: `${data.firstName} ${data.lastName}`,
-      title: data.title,
-      company: data.company,
-      bio: data.bio,
-      linkedinUrl: data.linkedinUrl || null,
-      region: data.region ?? 'CENTRAL',
-      industry: data.industry ?? 'OTHER'
-    },
-    create: {
-      email: session.user.email,
-      fullName: `${data.firstName} ${data.lastName}`,
-      title: data.title,
-      company: data.company,
-      bio: data.bio,
-      linkedinUrl: data.linkedinUrl || null,
-      region: data.region ?? 'CENTRAL',
-      industry: data.industry ?? 'OTHER',
-      memberSince: new Date(),
-      profilePhoto: session.user.avatarUrl,
-      online: true
-    }
+  const profilePayload = {
+    fullName: `${data.firstName} ${data.lastName}`,
+    title: data.title,
+    company: data.company,
+    bio: data.bio,
+    linkedinUrl: data.linkedinUrl || null,
+    region: data.region ?? 'CENTRAL',
+    industry: data.industry ?? 'OTHER'
+  };
+
+  const existingProfile = await prisma.memberProfile.findFirst({
+    where: { email: session.user.email }
   });
+
+  if (existingProfile) {
+    await prisma.memberProfile.update({
+      where: { id: existingProfile.id },
+      data: profilePayload
+    });
+  } else {
+    await prisma.memberProfile.create({
+      data: {
+        email: session.user.email,
+        ...profilePayload,
+        memberSince: new Date(),
+        profilePhoto: session.user.avatarUrl,
+        online: true
+      }
+    });
+  }
 
   revalidatePath('/dashboard/profile');
   revalidatePath('/dashboard/community');
