@@ -13,7 +13,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   const user = await getCurrentUser();
 
   if (!user) {
-    const headerStore = headers();
+    const headerStore = await headers();
     const pathname = headerStore.get('x-pathname') ?? '/admin';
     redirect(`/login?next=${encodeURIComponent(pathname)}`);
   }

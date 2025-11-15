@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import { requestPasswordReset } from '@/lib/server-actions/auth-actions';
 import { Input } from '@/components/ui/input';
@@ -33,16 +33,18 @@ function FieldError({ message }: { message?: string[] }) {
 export function ForgotPasswordForm() {
   const [state, formAction] = useFormState<FormState, FormData>(requestPasswordReset, initialState);
   const [submitted, setSubmitted] = useState(false);
+  useEffect(() => {
+    if (state?.success) {
+      setSubmitted(true);
+    }
+  }, [state]);
 
   return (
     <form
       className="space-y-6"
       action={async (formData) => {
         setSubmitted(false);
-        const result = await formAction(formData);
-        if (result?.success) {
-          setSubmitted(true);
-        }
+        await formAction(formData);
       }}
     >
       <div>

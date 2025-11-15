@@ -8,7 +8,9 @@ type LogoProps = {
   className?: string;
 };
 
-const sizeMap: Record<LogoProps['size'], number> = {
+type LogoSize = NonNullable<LogoProps['size']>;
+
+const sizeMap: Record<LogoSize, number> = {
   sm: 100,
   md: 120,
   lg: 140

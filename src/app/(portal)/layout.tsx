@@ -13,7 +13,7 @@ export default async function PortalLayout({ children }: PortalLayoutProps) {
   const user = await getCurrentUser();
 
   if (!user) {
-    const headerStore = headers();
+    const headerStore = await headers();
     const pathname = headerStore.get('x-pathname') ?? '/dashboard';
     redirect(`/login?next=${encodeURIComponent(pathname)}`);
   }

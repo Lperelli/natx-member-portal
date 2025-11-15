@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { ResourceCard } from '@/components/resources/resource-card';
 import { Input } from '@/components/ui/input';
@@ -10,11 +11,11 @@ async function ResourcesGrid({ query, category }: { query?: string; category?: s
       AND: [
         query
           ? {
-              OR: [
-                { title: { contains: query, mode: 'insensitive' } },
-                { description: { contains: query, mode: 'insensitive' } },
-                { tags: { has: query } }
-              ]
+                OR: [
+                  { title: { contains: query } },
+                  { description: { contains: query } },
+                  { tags: { contains: query } }
+                ]
             }
           : {},
         category ? { category } : {}
@@ -50,33 +51,38 @@ async function CategoryFilters({ activeCategory }: { activeCategory?: string }) 
   });
 
   return (
-    <div className="flex flex-wrap gap-3">
-      <a href="/dashboard/resources">
-        <Badge variant={activeCategory ? 'outline' : 'primary'} className="cursor-pointer">
-          All categories
-        </Badge>
-      </a>
-      {categories.map(({ category }) => (
-        <a key={category} href={`/dashboard/resources?category=${encodeURIComponent(category)}`}>
-          <Badge
-            variant={activeCategory === category ? 'primary' : 'outline'}
-            className="cursor-pointer"
-          >
-            {category}
+      <div className="flex flex-wrap gap-3">
+        <Link href="/dashboard/resources">
+          <Badge variant={activeCategory ? 'outline' : 'primary'} className="cursor-pointer">
+            All categories
           </Badge>
-        </a>
-      ))}
-    </div>
+        </Link>
+        {categories.map(({ category }) => (
+          <Link
+            key={category}
+            href={`/dashboard/resources?category=${encodeURIComponent(category ?? '')}`}
+          >
+            <Badge
+              variant={activeCategory === category ? 'primary' : 'outline'}
+              className="cursor-pointer"
+            >
+              {category}
+            </Badge>
+          </Link>
+        ))}
+      </div>
   );
 }
 
 type ResourcesPageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default function ResourcesPage({ searchParams }: ResourcesPageProps) {
-  const query = typeof searchParams?.q === 'string' ? searchParams.q : undefined;
-  const category = typeof searchParams?.category === 'string' ? searchParams.category : undefined;
+export default async function ResourcesPage({ searchParams }: ResourcesPageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const query = typeof resolvedSearchParams?.q === 'string' ? resolvedSearchParams.q : undefined;
+  const category =
+    typeof resolvedSearchParams?.category === 'string' ? resolvedSearchParams.category : undefined;
 
   return (
     <div className="space-y-10 animate-fade-in-up">
@@ -94,19 +100,17 @@ export default function ResourcesPage({ searchParams }: ResourcesPageProps) {
             className="h-12 md:max-w-md rounded-xl"
           />
         </form>
-        <Suspense fallback={null}>
-          {/* @ts-expect-error Async Server Component */}
-          <CategoryFilters activeCategory={category} />
-        </Suspense>
+          <Suspense fallback={null}>
+            <CategoryFilters activeCategory={category} />
+          </Suspense>
       </header>
 
-      <Suspense
-        key={`${query}-${category}`}
-        fallback={<p className="text-neutral-soft">Loading resources…</p>}
-      >
-        {/* @ts-expect-error Async Server Component */}
-        <ResourcesGrid query={query} category={category} />
-      </Suspense>
+        <Suspense
+          key={`${query}-${category}`}
+          fallback={<p className="text-neutral-soft">Loading resources…</p>}
+        >
+          <ResourcesGrid query={query} category={category} />
+        </Suspense>
     </div>
   );
 }

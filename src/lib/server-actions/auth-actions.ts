@@ -48,7 +48,7 @@ export async function login(_prevState: unknown, formData: FormData) {
     data: { lastLogin: new Date() }
   });
 
-  const cookiesStore = cookies();
+  const cookiesStore = await cookies();
   const next = cookiesStore.get('natx_next_path')?.value ?? '/dashboard';
   cookiesStore.delete('natx_next_path');
 

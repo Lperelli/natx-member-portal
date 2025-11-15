@@ -5,18 +5,20 @@ import { AuthCard } from '@/components/auth/auth-card';
 import { LoginForm } from '@/components/auth/login-form';
 
 type LoginPageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const session = await getSession();
   if (session) {
     redirect('/dashboard');
   }
 
-  const nextParam = typeof searchParams?.next === 'string' ? searchParams.next : undefined;
+  const nextParam =
+    typeof resolvedSearchParams?.next === 'string' ? resolvedSearchParams.next : undefined;
   if (nextParam) {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     cookieStore.set('natx_next_path', nextParam, {
       httpOnly: true,
       sameSite: 'lax'
@@ -28,7 +30,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       title="Sign in to NATX"
       subtitle="Access curated events, community insights, and premium member resources."
     >
-      <LoginForm defaultEmail={typeof searchParams?.email === 'string' ? searchParams.email : ''} />
+        <LoginForm
+          defaultEmail={
+            typeof resolvedSearchParams?.email === 'string' ? resolvedSearchParams.email : ''
+          }
+        />
     </AuthCard>
   );
 }
